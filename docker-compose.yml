@@ -6,16 +6,35 @@ services:
     image: portainer/portainer-ce 
     restart: always
     volumes:
-      - '/root/portainer/data:/data'
+      - './portainer/data:/data'
       - '/var/run/docker.sock:/var/run/docker.sock'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`${PORTAINER_HOST}`)"
+
 
   traefik:
     container_name: traefik
     image: traefik:v2.10
+    network_mode: "host"
     restart: always
     ports:
       - 80:80
       - 443:443
     volumes:
-      - /root/traefik/letsencrypt:/letsencrypt
+      - ./traefik/letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: 
+      - "--api.dashboard=false" # Disable insecure dashboard
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls.domains[0].main=${MAIN_HOST}"
+      - "--entrypoints.websecure.http.tls.domains[0].sans=${SANS_HOST}"
+      - "--certificatesresolvers.namecheap.acme.dnschallenge=true"
+      - "--certificatesresolvers.namecheap.acme.dnschallenge.provider=namecheap"
+      - "--certificatesresolvers.namecheap.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.namecheap.acme.email=${EMAIL}"
