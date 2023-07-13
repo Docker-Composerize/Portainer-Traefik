@@ -1,0 +1,21 @@
+version: '3.7'
+
+services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce 
+    restart: always
+    volumes:
+      - '/root/portainer/data:/data'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+
+  traefik:
+    container_name: traefik
+    image: traefik:v2.10
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /root/traefik/letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
